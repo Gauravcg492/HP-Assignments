@@ -10,7 +10,7 @@ int main( int argc, char* argv[])
     unsigned int n;
     if(argc > 1)
     {
-        n = (int)argv[1];
+        n = atoi(argv[1]);
     } else {
         n = 1000;
     }
@@ -56,14 +56,14 @@ int main( int argc, char* argv[])
     {
         for(int j=0; j<n;j++)
         {
-            a[i][j] = 10;
-            b[i][j] = 5;
+            h_a[i][j] = 10;
+            h_b[i][j] = 5;
         }        
     }
 
     cl_int err;
     size_t globalSize[2] = {n, n};
-    localSize[2] = {32, 32};
+    size_t localSize[2] = {32, 32};
 
     globalSize = ceil(n/(float)localSize)*localSize;
 
@@ -73,7 +73,7 @@ int main( int argc, char* argv[])
 
     context = clCreateContext(0, 1, &dev_id, NULL, NULL, &err);
 
-    queue = clCreateCommandQueue(context, dev_id, 0, &err);
+    queue = clCreateCommandQueueWithProperties(context, dev_id, NULL, &err);
 
     program = clCreateProgramWithSource(context, 1, (const char*)&source_str, (const size_t*)&source_size, &err);
 
