@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<CL/opencl.h>
+#include<math.h>
 #define MAX_SOURCE_SIZE (0x100000)
 /*
 * Exercise to add two vectors

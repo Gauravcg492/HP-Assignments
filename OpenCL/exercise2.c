@@ -1,17 +1,20 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<CL/opencl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <CL/opencl.h>
+#include <math.h>
 #define MAX_SOURCE_SIZE (0x100000)
 /*
 * Exercise to add two vectors
 */
-int main( int argc, char* argv[])
+int main(int argc, char *argv[])
 {
     unsigned int n;
-    if(argc > 1)
+    if (argc > 1)
     {
         n = atoi(argv[1]);
-    } else {
+    }
+    else
+    {
         n = 1000;
     }
 
@@ -20,14 +23,14 @@ int main( int argc, char* argv[])
     size_t source_size;
 
     fp = fopen("mmul.cl", "r");
-    if (!fp) {
+    if (!fp)
+    {
         fprintf(stderr, "Failed to load kernel.\n");
         exit(1);
     }
-    source_str = (char*)malloc(MAX_SOURCE_SIZE);
-    source_size = fread( source_str, 1, MAX_SOURCE_SIZE, fp);
-    fclose( fp );
-
+    source_str = (char *)malloc(MAX_SOURCE_SIZE);
+    source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
+    fclose(fp);
 
     //host arrays
     int *h_a;
@@ -46,26 +49,27 @@ int main( int argc, char* argv[])
     cl_program program;
     cl_kernel kernel;
 
-    size_t bytes = n*n*sizeof(int);
+    size_t bytes = n * sizeof(int);
 
-    h_a = (int*)malloc(bytes);
-    h_b = (int*)malloc(bytes);
-    h_c = (int*)malloc(bytes);
+    h_a = (int **)malloc(bytes);
+    h_b = (int **)malloc(bytes);
+    h_c = (int **)malloc(bytes);
 
-    for(int i=0;i<n;i++)
+    for (int i = 0; i < n; i++)
     {
-        for(int j=0; j<n;j++)
+        h_a[i] = (int *)malloc(bytes);
+        h_b[i] = (int *)malloc(bytes);
+        h_c[i] = (int *)malloc(bytes);
+        for (int j = 0; j < n; j++)
         {
             h_a[i][j] = 10;
             h_b[i][j] = 5;
-        }        
+        }
     }
 
     cl_int err;
     size_t globalSize[2] = {n, n};
     size_t localSize[2] = {32, 32};
-
-    globalSize = ceil(n/(float)localSize)*localSize;
 
     err = clGetPlatformIDs(1, &cpPlatform, NULL);
 
@@ -75,7 +79,7 @@ int main( int argc, char* argv[])
 
     queue = clCreateCommandQueueWithProperties(context, dev_id, NULL, &err);
 
-    program = clCreateProgramWithSource(context, 1, (const char*)&source_str, (const size_t*)&source_size, &err);
+    program = clCreateProgramWithSource(context, 1, (const char **)&source_str, (const size_t *)&source_size, &err);
 
     clBuildProgram(program, 0, NULL, NULL, NULL, NULL);
 
@@ -85,28 +89,27 @@ int main( int argc, char* argv[])
     d_b = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes, NULL, NULL);
     d_c = clCreateBuffer(context, CL_MEM_READ_ONLY, bytes, NULL, NULL);
 
-    err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0, bytes, h_a, 0, NULL, NULL);
-    err |= clEnqueueWriteBuffer(queue, d_b, CL_TRUE, 0, bytes, h_b, 0, NULL, NULL);
+    err = clEnqueueWriteBuffer(queue, d_a, CL_TRUE, 0, n*bytes, h_a, 0, NULL, NULL);
+    err |= clEnqueueWriteBuffer(queue, d_b, CL_TRUE, 0, n*bytes, h_b, 0, NULL, NULL);
 
     err = clSetKernelArg(kernel, 0, sizeof(unsigned int), &n);
     err |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &d_a);
     err |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &d_b);
     err |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &d_c);
 
-    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, &globalSize, &localSize, 0, NULL, NULL);
+    err = clEnqueueNDRangeKernel(queue, kernel, 2, NULL, globalSize, localSize, 0, NULL, NULL);
 
     clFinish(queue);
 
-    clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, bytes, h_c, 0, NULL, NULL);
+    clEnqueueReadBuffer(queue, d_c, CL_TRUE, 0, n*bytes, h_c, 0, NULL, NULL);
 
     printf("C:\n");
-    for(int i=0;i<n;i++)
+    for (int i = 0; i < n; i++)
     {
-        for(int j=0;j<n;j++)
+        for (int j = 0; j < n; j++)
         {
-            printf("c[%d,%d] = %d",i,j,h_c[i][j]);
+            printf("c[%d,%d] = %d", i, j, h_c[i][j]);
         }
-        
     }
 
     clReleaseMemObject(d_a);
