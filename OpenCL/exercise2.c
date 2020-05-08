@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        n = 1000;
+        n = 32;
     }
 
     FILE *fp;
@@ -33,9 +33,9 @@ int main(int argc, char *argv[])
     fclose(fp);
 
     //host arrays
-    int *h_a;
-    int *h_b;
-    int *h_c;
+    int **h_a;
+    int **h_b;
+    int **h_c;
 
     //device arrays
     cl_mem d_a;
